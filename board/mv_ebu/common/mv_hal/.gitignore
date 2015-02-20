@@ -1,0 +1,10 @@
+*.o
+*.o.*
+*.orig
+*.rej
+*.su
+nfc/
+cesa/
+neta/
+pp2/
+qd-dsdt-3.3/
