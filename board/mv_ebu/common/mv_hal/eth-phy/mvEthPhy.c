@@ -123,9 +123,9 @@ MV_STATUS mvEthPhyHalInit(MV_ETHPHY_HAL_DATA *halData)
 *******************************************************************************/
 MV_STATUS mvEthPhyInit(MV_U32 ethPortNum, MV_BOOL eeeEnable)
 {
-	MV_U32     phyAddr = 0;
-	MV_U16     deviceId;
-	MV_U16     id1, id2;
+	//MV_U32     phyAddr = 0;
+	//MV_U16     deviceId;
+	//MV_U16     id1, id2;
 #if 0
 	if (ethPortNum != ((MV_U32) -1))
 		phyAddr = ethphyHalData.phyAddr[ethPortNum];

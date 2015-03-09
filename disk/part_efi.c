@@ -428,7 +428,7 @@ int gpt_fill_pte(gpt_header *gpt_h, gpt_entry *gpt_e,
 		/* partition name */
 		name_len = sizeof(gpt_e[i].partition_name)
 			/ sizeof(efi_char16_t);
-		for (k = 0; k < name_len; k++)
+		for (k = 0; k < (name_len>32?32:name_len); k++)
 			gpt_e[i].partition_name[k] =
 				(efi_char16_t)(partitions[i].name[k]);
 
