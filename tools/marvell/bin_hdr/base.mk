@@ -243,5 +243,5 @@ CPPFLAGS = $(foreach FLAG, $(MVFLAGS), $(addprefix -D, $(FLAG)))
 ASFLAGS  = $(foreach FLAG, $(MVFLAGS), $(addprefix --defsym , $(FLAG)))
 LDFLAGS  = -static -nostartfiles -unwind-tables  -nostdlib -Wl,--build-id=none $(EXTRA_LD_FLAGS)
 
-
+CFLAGS += -fno-stack-protector
 
