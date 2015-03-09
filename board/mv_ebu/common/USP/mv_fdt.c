@@ -447,12 +447,13 @@ static int mv_fdt_scan_and_set_alias(void *fdt,
 	int delta;		/* difference between next and current offset */
 	int err = 0;		/* error number */
 	int level = 0;		/* current fdt scanning depth */
-	char aliasname[16];	/* alias name to be stored in '/aliases' node */
+	char aliasname[128];	/* alias name to be stored in '/aliases' node */
 	char path[128] = "";	/* full path to current node */
-	char tmp[24];		/* auxiliary char array for extended node name*/
+	char tmp[128];		/* auxiliary char array for extended node name*/
 	char *cut;		/* auxiliary char pointer */
 	const char *node;	/* node name */
 	uint32_t tag;		/* device tree tag at given offset */
+	const struct fdt_property *prop;
 
 	/* Check if '/aliases' node exist. Otherwise create it */
 	nodeoffset = mv_fdt_find_node(fdt, "aliases");
@@ -461,6 +462,27 @@ static int mv_fdt_scan_and_set_alias(void *fdt,
 		if (err < 0) {
 			mv_fdt_dprintf("Creating '/aliases' node failed\n");
 			return -1;
+		}
+		nodeoffset = fdt_path_offset(fdt, "/aliases");
+	}
+
+	/* Check if there are pre-defined aliases and rely on them
+	 * instead of scanning the Device Tree
+	 */
+	for (nextoffset = fdt_first_property_offset(fdt, nodeoffset);
+	     (nextoffset >= 0);
+	     (nextoffset = fdt_next_property_offset(fdt, nextoffset))) {
+
+		prop = fdt_get_property_by_offset(fdt, nextoffset, NULL);
+		if (!prop) {
+			nextoffset = -FDT_ERR_INTERNAL;
+			break;
+		}
+		if (strncmp(fdt_string(fdt, fdt32_to_cpu(prop->nameoff)),
+			    alias, strlen(alias)) == 0) {
+			mv_fdt_dprintf("'%s' aliases exist. Skip scanning DT for '%s' nodes\n",
+				       alias, name);
+			return 0;
 		}
 	}
 
