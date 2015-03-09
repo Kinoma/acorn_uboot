@@ -1063,7 +1063,7 @@ clean:
 	@rm -f $(obj)include/bmp_logo_data.h
 	@rm -f $(obj)lib/asm-offsets.s
 	@rm -f $(obj)include/generated/asm-offsets.h
-	@rm -f $(obj)$(CPUDIR)/$(SOC)/asm-offsets.s
+	#@rm -f $(obj)$(CPUDIR)/$(SOC)/asm-offsets.s
 	@rm -f $(TIMESTAMP_FILE) $(VERSION_FILE)
 	@$(MAKE) -s -C doc/DocBook/ cleandocs
 	@find $(OBJTREE) -type f \
