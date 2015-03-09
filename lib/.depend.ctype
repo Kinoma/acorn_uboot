@@ -1,0 +1,2 @@
+ctype.o: ctype.c \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/ctype.h

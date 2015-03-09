@@ -1,0 +1,11 @@
+mini_inflate.o: mini_inflate.c \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_cmd_defaults.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_defaults.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/configs/armada_38x.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/asm/config.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_fallbacks.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_uncmd_spl.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/configs/../../board/mv_ebu/a38x/mvSysHwConfig.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_cmd_default.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/jffs2/mini_inflate.h

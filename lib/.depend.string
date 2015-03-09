@@ -1,0 +1,21 @@
+string.o: string.c \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/types.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/config.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/posix_types.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/stddef.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/asm/posix_types.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/asm/types.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/string.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/asm/string.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_cmd_defaults.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_defaults.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/configs/armada_38x.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/asm/config.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_fallbacks.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_uncmd_spl.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/configs/../../board/mv_ebu/a38x/mvSysHwConfig.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/config_cmd_default.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/linux_string.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/ctype.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/malloc.h

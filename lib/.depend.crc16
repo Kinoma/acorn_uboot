@@ -1,0 +1,8 @@
+crc16.o: crc16.c \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/crc.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/types.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/config.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/posix_types.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/linux/stddef.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/asm/posix_types.h \
+ /home/kfyao/Marvell/A385_uboot_T3/u-boot-2013.01/include/asm/types.h
