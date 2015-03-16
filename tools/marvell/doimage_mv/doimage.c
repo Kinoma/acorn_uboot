@@ -96,10 +96,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int 		f_in = -1;
 int 		f_out = -1;
 int 		f_header = -1;
+int 		f_spi = -1;
 struct stat 	fs_stat;
+struct stat 	fs_spi_stat;
 rsa_context	rsa;
 aes_context	aes;
 unsigned char	IV[16] = {0};
+
+
+unsigned int CalcCRC32(unsigned char* inData, unsigned int inLen);
 
 /*******************************************************************************
 *    create_rsa_signature (memory buffer content)
@@ -1278,6 +1283,7 @@ int build_regular_img (USER_OPTIONS	*opt, char *buf_in)
 	int	size_written = 0;
 	int	new_file_size = 0;
 	MV_U32 	chsum32 = 0;
+        int i;
 
 	new_file_size = opt->image_sz;
 
@@ -1308,6 +1314,70 @@ int build_regular_img (USER_OPTIONS	*opt, char *buf_in)
 		return 1;
 	}
 
+        //
+        if(opt->fname_spi!=NULL){
+
+            //add padding
+            int spi_uboot_addr = 0x100000;
+            int gap_size = spi_uboot_addr - fs_stat.st_size;
+            if(gap_size<0){
+                printf("#####The size of the uboot image should be less than 1MB.\n");
+                return -1;
+            }
+            if(gap_size>0){
+                MV_U8   gap = 0;
+                for(i=0;i<gap_size;i++)
+            	    size_written += write(f_out, &gap, 1);
+                new_file_size += gap_size;
+            }
+
+            //add "00 00 00 01" as start code
+            {
+                unsigned char tmp[4];
+                tmp[0] = 0x0;
+                tmp[1] = 0x0;
+                tmp[2] = 0x0;
+                tmp[3] = 0x1;
+            
+                size_written += write(f_out, tmp, 4);
+                new_file_size += 4;
+            }
+
+            //spi file length
+            f_spi = open(opt->fname_spi, O_RDONLY|O_BINARY);
+            if (f_spi == -1) {
+                fprintf(stderr,"File '%s' not found \n", opt->fname_spi);
+                return -1;
+            }
+            if (0 != fstat(f_spi, &fs_spi_stat)) {
+                fprintf(stderr,"fstat failed for file: '%s'\n", opt->fname_spi);
+                close(f_spi);
+                return -1;
+            }
+            int spi_size = fs_spi_stat.st_size;
+            size_written += write(f_out, &spi_size, sizeof(spi_size));
+            new_file_size += sizeof(spi_size);        
+
+            unsigned char *buf_spi = mmap(0, fs_spi_stat.st_size, PROT_READ, MAP_SHARED, f_spi, 0);
+            if (!buf_spi) {
+                fprintf(stderr,"Error mapping %s file \n", opt->fname_spi);
+                close(f_spi);
+                return -1;
+            } 
+
+            //add crc
+            unsigned int chsum32 = CalcCRC32(buf_spi, (unsigned int)(fs_spi_stat.st_size));
+
+            size_written += write(f_out, &chsum32, sizeof(chsum32));
+            new_file_size += sizeof(chsum32);
+
+            size_written += write(f_out, buf_spi, fs_spi_stat.st_size);
+            new_file_size += fs_spi_stat.st_size;
+
+            if (buf_spi)
+                munmap((void*)buf_spi, fs_spi_stat.st_size);
+            close(f_spi);
+        }
 	return 0;
 } /* end of build_other_img() */
 
@@ -1954,6 +2024,50 @@ MV_U32 crc32(MV_U32 crc, volatile MV_U32 *buf, MV_U32 len)
 
 } /* end of crc32() */
 
+const int CRC32_SEED	= 0x04C11DB7;
+
+static unsigned int crc32_table[256];
+void BuildCrcTable()
+{
+	unsigned int i=0,j=0;
+	unsigned int nData=0;
+	unsigned int nAccum=0;
+
+	for (i = 0; i < 256; i++ )
+	{
+		nData = ( unsigned int )( (i << 24));
+		nAccum = 0;
+		for (j = 0; j < 8; j++ )
+		{
+			if ( ( nData ^ nAccum ) & 0x80000000 )
+				nAccum = ( nAccum << 1 ) ^ CRC32_SEED;
+			else
+				nAccum <<= 1;
+			nData <<= 1;
+		}
+		crc32_table[i] = nAccum;
+	}
+
+        //for(i=0;i<64;i++){
+        //    printf("#######crc32_table: 0x%x, 0x%x, 0x%x, 0x%x\n", crc32_table[i*4], crc32_table[i*4+1], crc32_table[i*4+2], crc32_table[i*4+3]);  
+        //}
+
+}
+unsigned int CalcCRC32(unsigned char* inData, unsigned int inLen)
+{
+	unsigned int i=0;
+	unsigned int dwRegister = 0xFFFFFFFFL;
+        BuildCrcTable();
+	for(i=0; i<inLen; i++ )
+	{
+		dwRegister = (((dwRegister) << 8)) ^ crc32_table[(inData[i]&0xff) ^ ((dwRegister>>24)&0xff)];
+	}
+	return dwRegister;
+}
+
+
+
+
 /*******************************************************************************
 *    select_image
 *          select image options by the image name
@@ -2001,7 +2115,7 @@ int main (int argc, char** argv)
 {
 	USER_OPTIONS	options;
 	int 		optch; /* command-line option char */
-	static char	optstring[] = "T:D:E:X:Y:S:P:W:H:R:M:Z:J:B:F:A:G:L:N:C:b:u:m:p";
+	static char	optstring[] = "T:D:E:X:Y:S:P:W:H:R:M:Z:J:B:F:A:G:L:N:C:b:u:m:s:p";
 	int		i, k;
 
 	if (argc < 2) goto parse_error;
@@ -2205,6 +2319,10 @@ int main (int argc, char** argv)
 			options.flags |= m_OPTION_MASK;
 			DB("BootROM debug port MPP setup # %d\n", options.debugPortMpp);
 			break;
+                case 's': /* spi file */
+                        options.fname_spi = optarg;
+                        printf("spi file name %s, %s\n", options.fname_spi, optarg);
+                        break;
 
 		default:
 			goto parse_error;
@@ -2214,7 +2332,7 @@ int main (int argc, char** argv)
 	/* assign file names */
 	for (i = 0; (optind < argc) && (i < ARRAY_SIZE(options.fname_arr)); ++optind, i++) {
 		options.fname_arr[i] = argv[optind];
-		DB("File @ array index %d is %s (option index is %d)\n", i, argv[optind], optind);
+		printf("File @ array index %d is %s (option index is %d)\n", i, argv[optind], optind);
 		/* verify that all file names are different */
 		for (k = 0; k < i; k++) {
 			if (0 == strcmp(options.fname_arr[i], options.fname_arr[k])) {

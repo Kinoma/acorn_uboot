@@ -300,12 +300,16 @@ else {
 	$targetBoard = "-$targetBoard";
 }
 
+#compile the sx-at91.c
+system("rm sx-at91");
+system("gcc tools/marvell/xmodem/sx-at91.c -o sx-at91");
 
 #Create Image and Uart Image
 print "\n**** [Creating Image]\t*****\n\n";
 
 $failUart = system("./tools/marvell/doimage -T uart -D 0 -E 0 -G ./tools/marvell/bin_hdr/bin_hdr.uart.bin u-boot.bin u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin");
 $fail = system("./tools/marvell/doimage -T $img_type -D 0x0 -E 0x0 $img_opts -G ./tools/marvell/bin_hdr/bin_hdr.bin u-boot.bin u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin");
+$failUartSpi = system("./tools/marvell/doimage -T uart -D 0 -E 0 -s u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin -G ./tools/marvell/bin_hdr/bin_hdr.uart.bin u-boot.bin u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin");
 
 if($fail){
 	print "\n *** Error: Doimage failed\n\n";
@@ -314,6 +318,10 @@ if($fail){
 if($failUart){
 	print "\n *** Error: Doimage for uart image failed\n\n";
 	exit 1;
+}
+if($failUartSpi){
+        print "\n *** Error: Doimage for uart spi image failed\n\n";
+        exit 1;
 }
 
 if(defined $opt_o)
@@ -327,6 +335,10 @@ if(defined $opt_o)
 	system("cp u-boot $opt_o/$endian/$opt_f/u-boot-$boardID-$opt_v-$flash_name$targetBoard");
 	system("cp u-boot.srec $opt_o/$endian/$opt_f/u-boot-$boardID-$opt_v-$flash_name$targetBoard.srec");
 	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin $opt_o/$endian/$opt_f/");
+	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin $opt_o/$endian/$opt_f/");
+	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin $opt_o/u-boot-uart.bin");
+	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin $opt_o/u-boot-uart-plus.bin");
+	system("cp sx-at91 $opt_o/");
 
 	system("cp tools/marvell/bin_hdr/bin_hdr.bin $opt_o/bin_hdr/");
 	system("cp tools/marvell/bin_hdr/bin_hdr.elf $opt_o/bin_hdr/");

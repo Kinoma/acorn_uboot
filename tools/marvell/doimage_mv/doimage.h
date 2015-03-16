@@ -160,6 +160,7 @@ typedef struct
 	char		*fname_prkey;/* RSA Private key file */
 	char		*fname_aeskey;/* AES-128 key file */
 	char		*fname_list; /* headers definition file */
+	char		*fname_spi; /* spi-uboot */
 	u32			flags;       /* user-defined flags */
 	u32			req_flags;   /* mandatory flags */
 	u32			image_source;/* starting sector */

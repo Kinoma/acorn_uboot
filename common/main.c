@@ -69,6 +69,8 @@ int update_tftp (ulong addr);
 
 #undef DEBUG_PARSER
 
+#define SPI_UBOOT_ADDR_START 0x100000
+
 char        console_buffer[CONFIG_SYS_CBSIZE + 1];	/* console I/O buffer	*/
 
 static char * delete_char (char *buffer, char *p, int *colp, int *np, int plen);
@@ -90,6 +92,49 @@ static int      retry_time = -1; /* -1 so can call readline before main_loop */
 int do_mdm_init = 0;
 extern void mdm_init(void); /* defined in board.c */
 #endif
+
+
+
+const int CRC32_SEED    = 0x04C11DB7;
+
+static unsigned int crc32_table[256];
+void BuildCrcTable(void)
+{
+        unsigned int i=0,j=0;
+        unsigned int nData=0;
+        unsigned int nAccum=0;
+
+        for (i = 0; i < 256; i++ )
+        {
+                nData = ( unsigned int )( (i << 24));
+                nAccum = 0;
+                for (j = 0; j < 8; j++ )
+                {
+                        if ( ( nData ^ nAccum ) & 0x80000000 )
+                                nAccum = ( nAccum << 1 ) ^ CRC32_SEED;
+                        else
+                                nAccum <<= 1;
+                        nData <<= 1;
+                }
+                crc32_table[i] = nAccum;
+        }
+        //for(i=0;i<64;i++){
+        //    printf("#######crc32_table: 0x%x, 0x%x, 0x%x, 0x%x\n", crc32_table[i*4], crc32_table[i*4+1], crc32_table[i*4+2], crc32_table[i*4+3]);
+        //}
+}
+unsigned int CalcCRC32(unsigned char* inData, unsigned int inLen)
+{
+        unsigned int i=0;
+        unsigned int dwRegister = 0xFFFFFFFFL;
+        BuildCrcTable();
+        for(i=0; i<inLen; i++ )
+        {
+                dwRegister = (((dwRegister) << 8)) ^ crc32_table[(inData[i]) ^ ((dwRegister>>24)&0xff)];
+        }
+        return dwRegister;
+}
+
+
 
 /***************************************************************************
  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
@@ -349,7 +394,6 @@ static void process_fdt_options(const void *blob)
 
 
 /****************************************************************************/
-
 void main_loop (void)
 {
 #ifndef CONFIG_SYS_HUSH_PARSER
@@ -479,6 +523,24 @@ void main_loop (void)
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
+        unsigned char* spi_addr = (unsigned char*)SPI_UBOOT_ADDR_START;
+        if(spi_addr[0]==0x0 && spi_addr[1]==0x0 && spi_addr[2]==0x0 && spi_addr[3]==0x1){
+            int *spi_uboot_len = (int *)(spi_addr+4);
+            unsigned int *chsum32 = (unsigned int *)(spi_addr+8);
+            unsigned char *spi_uboot_start = (unsigned char *)(spi_addr+12);
+            unsigned int crc32_value;
+
+            crc32_value = CalcCRC32(spi_uboot_start, *spi_uboot_len);
+            if(crc32_value==*chsum32){
+                char cmds[256];
+                sprintf(cmds, "sf write 0x%x 0 0x%x", (unsigned int)spi_uboot_start, *spi_uboot_len);
+                run_command("sf probe 0", 0);
+                run_command("sf erase 0 +100000", 0);
+                printf("#######: %s\n", cmds);
+                run_command(cmds, 0);
+            }
+        }
+        
 	if (bootdelay != -1 && s && !abortboot(bootdelay)) {
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
