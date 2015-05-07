@@ -55,9 +55,9 @@
 
 include $(TOPDIR)/config.mk
 
-LIB := libsk98lin.o
+LIB := $(obj)libsk98lin.o
 
-OBJS :=	\
+COBJS :=	\
 		uboot_drv.o	\
 		uboot_skb.o	\
 		sky2.o		\
@@ -130,17 +130,21 @@ EXTRA_CFLAGS += -I. -DYUK2 -DYUKON #-DGENESIS -DSK_DIAG_SUPPORT $(DBGDEF) $(SKPA
 
 CFLAGS += $(EXTRA_CFLAGS)
 
+SRCS    := $(COBJS:.o=.c)
+OBJS    := $(addprefix $(obj), $(COBJS))
+
 
 all:    $(LIB)
 
-$(LIB): $(OBJS)
+$(LIB): $(obj).depend $(OBJS)
 	$(AR) crv $@ $(OBJS)
 
 #########################################################################
 
-.depend:        Makefile $(OBJS:.o=.c)
-		$(CC) -M $(CFLAGS) $(OBJS:.o=.c) > $@
+$(obj).depend:        Makefile $(SRCS)
+		$(CC) -M $(CFLAGS) $(SRCS) > $@
 
-sinclude .depend
+sinclude $(obj).depend
+
 
 #########################################################################

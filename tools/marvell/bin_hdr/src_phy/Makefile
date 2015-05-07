@@ -62,11 +62,12 @@
 #;
 #;*******************************************************************************/
 #.SECONDARY:
+include $(TOPDIR)/config.mk
 
 include ../base.mk
 
-TGT = phy_$(BOARD).a
-TGT_UART = phy_$(BOARD).uart.a
+TGT = $(obj)phy_$(BOARD).a
+TGT_UART = $(obj)phy_$(BOARD).uart.a
 
 CSRC = $(BOARD)/mvHighSpeedEnvSpec.c
 
@@ -90,24 +91,31 @@ ifeq "$(CONFIG_ALLEYCAT3)"  "y"
   CSRC += $(BOARD)/mvCtrlPex.c
 endif
 
+ifneq ($(obj),)
+$(shell mkdir -p $(obj)$(BOARD))
+endif
+
+
 COBJ = $(subst .c,.o,$(CSRC))
+COBJ := $(addprefix $(obj), $(COBJ))
 CUART_OBJ = $(subst .c,.uart.o,$(CSRC))
+CUART_OBJ := $(addprefix $(obj), $(CUART_OBJ))
 
 all:   $(TGT) $(TGT_UART)
 
-%.o: %.c
+$(obj)%.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-%.uart.o: %.c
+$(obj)%.uart.o: %.c
 	$(CC) $(CFLAGS) -DNOT_USE_UART -DMV_NO_INPUT -DMV_NO_PRINT  $(CPPFLAGS) -c -o  $@ $<
 
 $(TGT): $(COBJ)
 	ar rcs $(TGT)  $(COBJ)
-	$(CP) ./$@ ../
+	$(CP) $@ $(obj)../
 
 $(TGT_UART): $(CUART_OBJ)
 	ar rcs $(TGT_UART)  $(CUART_OBJ)
-	$(CP) ./$@ ../
+	$(CP) $@ $(obj)../
 
 clean:
-	$(RM) $(BOARD)/*.o  ./*.a
+	$(RM) $(obj)$(BOARD)/*.o  $(obj)./*.a

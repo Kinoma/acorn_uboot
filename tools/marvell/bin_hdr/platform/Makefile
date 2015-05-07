@@ -63,13 +63,13 @@
 #;
 #;*******************************************************************************/
 #.SECONDARY:
-
+include $(TOPDIR)/config.mk
 include ../base.mk
 
 BOARDFLAG = $(filter -DCONFIG_%, $(CFLAGS))
 
-TGT = plat.a
-TGT_UART = plat.uart.a
+TGT = $(obj)plat.a
+TGT_UART = $(obj)plat.uart.a
 
 DRV = drivers
 UTILS = utils
@@ -89,30 +89,39 @@ else ifeq "$(CONFIG_ARMADA_39X)"  "y"
   CSRC_UTILS += $(UTILS)/mv_seq_exec.c
 endif
 
+ifneq ($(obj),)
+$(shell mkdir -p $(obj)drivers)
+$(shell mkdir -p $(obj)utils)
+$(shell mkdir -p $(obj)$(SYS_ENV))
+endif
+
+
 CSRC = $(CSRC_DRV) $(CSRC_UTILS) $(CSRC_SYS_ENV)
 
 COBJ = $(subst .c,.o,$(CSRC))
+COBJ := $(addprefix $(obj), $(COBJ))
 CUART_OBJ = $(subst .c,.uart.o,$(CSRC))
+CUART_OBJ := $(addprefix $(obj), $(CUART_OBJ))
 
 all:   $(TGT) $(TGT_UART)
 
-%.o: %.c
+$(obj)%.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-%.uart.o: %.c
+$(obj)%.uart.o: %.c
 	$(CC) $(CFLAGS) -DNOT_USE_UART -DMV_NO_INPUT -DMV_NO_PRINT  $(CPPFLAGS) -c -o  $@ $<
 
 $(TGT): $(COBJ)
 	ar rcs $(TGT)  $(COBJ)
-	$(CP) ./$@ ../
+	$(CP) $@ $(obj)../
 
 $(TGT_UART): $(CUART_OBJ)
 	ar rcs $(TGT_UART)  $(CUART_OBJ)
-	$(CP) ./$@ ../
+	$(CP) $@ $(obj)../
 
-setparams:
-	$(HOSTCC) $(BOARDFLAG) -Wall $(INCLUDE) $(CPPFLAGS) -o $@  $(addsuffix .c, $(UTILS)/$@)
-	$(CP) $@ ../
+$(obj)setparams:
+	$(HOSTCC) $(BOARDFLAG) -Wall $(INCLUDE) $(CPPFLAGS) -o $@  $(addsuffix .c, $(UTILS)/setparams)
+	$(CP) $@ $(obj)../
 
 clean:
-	$(RM) setparams *.raw  ./*.o  ./*.a
+	$(RM) $(obj)setparams $(obj)*.raw  $(obj)./*.o  $(obj)./*.a

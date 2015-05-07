@@ -9,8 +9,8 @@ LD_ENDIAN   = -EB
 endif
 
 # Main directory structure
-SRC_PATH           = $(TOPDIR)/board/mv_ebu
-AXP_CMN_DIR	   = $(SRC_PATH)/common
+AXP_CMN_DIR	   = $(TOPDIR)/board/mv_ebu/common
+SRC_PATH           = $(AXP_CMN_DIR)/../
 COMMON_DIR         = $(AXP_CMN_DIR)/common
 USP_DIR            = $(AXP_CMN_DIR)/USP
 

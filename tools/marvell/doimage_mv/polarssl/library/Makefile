@@ -1,4 +1,4 @@
-
+include $(TOPDIR)/config.mk
 # Also see "include/polarssl/config.h"
 
 CFLAGS	= -g -I../include -D_FILE_OFFSET_BITS=64
@@ -27,31 +27,33 @@ OBJS=	aes.o		arc4.o		base64.o	\
 	timing.o	x509parse.o	xtea.o		\
 	camellia.o  mvMemPool.o
 
+OBJS    := $(addprefix $(obj), $(OBJS))
+
 .SILENT:
 
 all: static
 
-static: libpolarssl.a
+static: $(obj)libpolarssl.a
 
-shared: libpolarssl.$(DLEXT)
+shared: $(obj)libpolarssl.$(DLEXT)
 
-libpolarssl.a: $(OBJS)
+$(obj)libpolarssl.a: $(OBJS)
 	echo "  AR    $@"
 	ar r $@ $(OBJS)
 	echo "  RL    $@"
 	ranlib $@
 
-libpolarssl.so: libpolarssl.a
+$(obj)libpolarssl.so: $(obj)libpolarssl.a
 	echo "  LD    $@"
 	$(CC) -shared -Wl,-soname,$@ -o $@ $(OBJS)
 
-libpolarssl.dylib: libpolarssl.a
+$(obj)libpolarssl.dylib: $(obj)libpolarssl.a
 	echo "  LD    $@"
 	$(CC) -dynamiclib -o $@ $(OBJS)
 
-.c.o:
+$(obj)%.o: $(obj)%.c
 	echo "  CC    $<"
-	$(CC) $(CFLAGS) $(OFLAGS) -c $<
+	$(CC) $(CFLAGS) $(OFLAGS) -o $@ -c $<
 
 clean:
-	rm -f *.o libpolarssl.*
+	rm -f $(obj)*.o $(obj)libpolarssl.*

@@ -62,7 +62,7 @@
 #;
 #;*******************************************************************************/
 #.SECONDARY:
-
+include $(TOPDIR)/config.mk
 include ../base.mk
 
 TGT = generalInit.a
@@ -77,24 +77,30 @@ ifeq "$(CONFIG_RD_88F6710)"  "y"
   CSRC += $(BOARD)/bin_sramcfg.c
 endif
 
+ifneq ($(obj),)
+$(shell mkdir -p $(obj)$(BOARD))
+endif
+
 COBJ = $(subst .c,.o,$(CSRC))
+COBJ := $(addprefix $(obj), $(COBJ))
 CUART_OBJ = $(subst .c,.uart.o,$(CSRC))
+CUART_OBJ := $(addprefix $(obj), $(CUART_OBJ))
 
-all:   $(TGT) $(TGT_UART)
+all:   $(obj)$(TGT) $(obj)$(TGT_UART)
 
-%.o: %.c
+$(obj)%.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-%.uart.o: %.c
+$(obj)%.uart.o: %.c
 	$(CC) $(CFLAGS) -DNOT_USE_UART -DMV_NO_INPUT -DMV_NO_PRINT  $(CPPFLAGS) -c -o  $@ $<
 
-$(TGT): $(COBJ)
-	ar rcs $(TGT)  $(COBJ)
-	$(CP) ./$@ ../
+$(obj)$(TGT): $(COBJ)
+	ar rcs $(obj)$(TGT)  $(COBJ)
+	$(CP) $@ $(obj)../
 
-$(TGT_UART): $(CUART_OBJ)
-	ar rcs $(TGT_UART)  $(CUART_OBJ)
-	$(CP) ./$@ ../
+$(obj)$(TGT_UART): $(CUART_OBJ)
+	ar rcs $(obj)$(TGT_UART)  $(CUART_OBJ)
+	$(CP) $@ $(obj)../
 
 clean:
-	$(RM) $(BOARD)/*.o ./*.a
+	$(RM) $(obj)$(BOARD)/*.o $(obj)./*.a

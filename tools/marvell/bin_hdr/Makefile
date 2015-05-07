@@ -62,7 +62,7 @@
 #;
 #;*******************************************************************************/
 #.SECONDARY:
-
+include $(TOPDIR)/config.mk
 include ./base.mk
 
 SETPARAMS   = setparams
@@ -71,6 +71,10 @@ LDSCRIPT    = linker.scr
 LDSECSCRIPT = linker_sec.scr
 DRAMREGS    = ./dramregs.txt
 MAIN = main
+
+ifneq ($(obj),)
+$(shell mkdir -p $(obj)$(MAIN))
+endif
 
 LDFLAGSBIN    = -T $(LDSCRIPT) $(LDFLAGS)
 LDSECFLAGSBIN = -T $(LDSECSCRIPT) $(LDFLAGS)
@@ -83,20 +87,23 @@ ASRC = $(MAIN)/bin_entry.s
 CSRC = $(MAIN)/mvdispacher.c
 
 AOBJ = $(subst .s,.o,$(ASRC))
+AOBJ := $(addprefix $(obj), $(AOBJ))
 COBJ = $(subst .c,.o,$(CSRC))
+COBJ := $(addprefix $(obj), $(COBJ))
 CUART_OBJ = $(subst .c,.uart.o,$(CSRC))
+CUART_OBJ := $(addprefix $(obj), $(CUART_OBJ))
 
-LIB_PHY = phy_$(BOARD).a
-LIB_DDR = ddr_$(BOARD).a
-LIB_PLAT = plat.a
-LIB_SWUP = suspendWUP.a
-LIB_GENERAL_INIT = generalInit.a
+LIB_PHY = $(obj)phy_$(BOARD).a
+LIB_DDR = $(obj)ddr_$(BOARD).a
+LIB_PLAT = $(obj)plat.a
+LIB_SWUP = $(obj)suspendWUP.a
+LIB_GENERAL_INIT = $(obj)generalInit.a
 
-LIB_PHY_UART = phy_$(BOARD).uart.a
-LIB_DDR_UART = ddr_$(BOARD).uart.a
-LIB_PLAT_UART = plat.uart.a
-LIB_SWUP_UART = suspendWUP.uart.a
-LIB_GENERAL_INIT_UART = generalInit.uart.a
+LIB_PHY_UART = $(obj)phy_$(BOARD).uart.a
+LIB_DDR_UART = $(obj)ddr_$(BOARD).uart.a
+LIB_PLAT_UART = $(obj)plat.uart.a
+LIB_SWUP_UART = $(obj)suspendWUP.uart.a
+LIB_GENERAL_INIT_UART = $(obj)generalInit.uart.a
 
 LIBGCC = $(MAIN)/libgcc.lib
 
@@ -119,64 +126,67 @@ HDR_COMPONENTS_UART = $(LIB_PLAT_UART) $(LIB_GENERAL_INIT_UART) $(LIB_PHY_UART) 
 #CFLAGS += -DCONFIG_EXAMPLE_COMPONENT
 #endif
 
-all:   subdirs $(TGT).bin $(TGT)_sec.bin $(TGT).uart.bin  $(TGT).dis $(TGT)_sec.dis $(TGT).uart.dis $(TGT).srec $(TGT)_sec.srec $(TGT).uart.srec
+all:   subdirs $(obj)$(TGT).bin $(obj)$(TGT)_sec.bin $(obj)$(TGT).uart.bin  $(obj)$(TGT).dis $(obj)$(TGT)_sec.dis $(obj)$(TGT).uart.dis $(obj)$(TGT).srec $(obj)$(TGT)_sec.srec $(obj)$(TGT).uart.srec
 
-%.o: %.c
+$(AOBJ): $(ASRC)
+	$(CC) -c -o $@ $<
+
+$(obj)%.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-%.uart.o: %.c
+$(obj)%.uart.o: %.c
 	$(CC) $(CFLAGS) -DNOT_USE_UART -DMV_NO_INPUT -DMV_NO_PRINT  $(CPPFLAGS) -c -o  $@ $<
 
-$(TGT).bin: $(TGT).elf
+$(obj)$(TGT).bin: $(obj)$(TGT).elf
 	$(OBJCOPY) -S -O binary $< $(addsuffix .tmp, $@)
 	$(CAT) $(PARAMSFILE).raw $(addsuffix .tmp, $@) > $@
 	$(RM) $(addsuffix .tmp, $@)
 
-$(TGT)_sec.bin: $(TGT)_sec.elf
+$(obj)$(TGT)_sec.bin: $(obj)$(TGT)_sec.elf
 	$(OBJCOPY) -S -O binary $< $(addsuffix .tmp, $@)
 	$(CAT) $(PARAMSFILE)_sec.raw $(addsuffix .tmp, $@) > $@
 	$(RM) $(addsuffix .tmp, $@)
 
-$(TGT).uart.bin: $(TGT).uart.elf
+$(obj)$(TGT).uart.bin: $(obj)$(TGT).uart.elf
 	$(OBJCOPY) -S -O binary $< $(addsuffix .tmp, $@)
 	$(CAT) $(PARAMSFILE).raw $(addsuffix .tmp, $@) > $@
 	$(RM) $(addsuffix .tmp, $@)
 
-$(TGT).srec: $(TGT).elf
+$(obj)$(TGT).srec: $(obj)$(TGT).elf
 	$(OBJCOPY) -O srec $< $@
 
-$(TGT)_sec.srec: $(TGT)_sec.elf
+$(obj)$(TGT)_sec.srec: $(obj)$(TGT)_sec.elf
 	$(OBJCOPY) -O srec $< $@
 
-$(TGT).dis:  $(TGT).elf
+$(obj)$(TGT).dis:  $(obj)$(TGT).elf
 	$(OBJDUMP) -lhaD -S $<  > $@
 
-$(TGT)_sec.dis:  $(TGT)_sec.elf
+$(obj)$(TGT)_sec.dis:  $(obj)$(TGT)_sec.elf
 	$(OBJDUMP) -lhaD -S $<  > $@
 
-$(TGT).uart.srec: $(TGT).uart.elf
+$(obj)$(TGT).uart.srec: $(obj)$(TGT).uart.elf
 	$(OBJCOPY) -O srec $< $@
 
-$(TGT).uart.dis:  $(TGT).uart.elf
+$(obj)$(TGT).uart.dis:  $(obj)$(TGT).uart.elf
 	$(OBJDUMP) -lhaD -S $<  > $@
 
-$(TGT).elf: subdirs  $(AOBJ) $(COBJ) $(SETPARAM) $(LDSCRIPT)
+$(obj)$(TGT).elf: subdirs  $(AOBJ) $(COBJ) $(SETPARAM) $(LDSCRIPT)
 	$(CC) $(LDFLAGSBIN) $(AOBJ) $(COBJ) $(HDR_COMPONENTS) $(LIB_PLAT) $(LIBGCC) -o $@
 
-$(TGT)_sec.elf: subdirs  $(AOBJ) $(COBJ) $(SETPARAM) $(LDSECSCRIPT)
+$(obj)$(TGT)_sec.elf: subdirs  $(AOBJ) $(COBJ) $(SETPARAM) $(LDSECSCRIPT)
 	$(CC) $(LDSECFLAGSBIN) $(AOBJ) $(COBJ) $(HDR_COMPONENTS) $(LIB_PLAT) $(LIBGCC) -o $@
 
-$(TGT).uart.elf: $(AOBJ) $(CUART_OBJ) subdirs
+$(obj)$(TGT).uart.elf: $(AOBJ) $(CUART_OBJ) subdirs
 	$(CC) $(LDFLAGSBIN) $(AOBJ) $(CUART_OBJ) $(HDR_COMPONENTS_UART) $(LIB_PLAT_UART) $(LIBGCC) -o $@
 
-$(LDSCRIPT): $(SETPARAMS)
-	./$(SETPARAMS) -B $(BOARD) -P $(PARAMSFILE).txt -R $(DRAMREGS) -d $(DEBUG_MODE_FLAG) $(PARAMSFILE).raw $@
+$(obj)$(LDSCRIPT): $(obj)$(SETPARAMS)
+	$(obj)./$(SETPARAMS) -B $(BOARD) -P $(PARAMSFILE).txt -R $(DRAMREGS) -d $(DEBUG_MODE_FLAG) $(PARAMSFILE).raw $@
 
-$(LDSECSCRIPT): $(SETPARAMS)
-	./$(SETPARAMS) -S -B $(BOARD) -P $(PARAMSFILE).txt -R $(DRAMREGS) -d $(DEBUG_MODE_FLAG) $(PARAMSFILE)_sec.raw $@
+$(obj)$(LDSECSCRIPT): $(obj)$(SETPARAMS)
+	$(obj)./$(SETPARAMS) -S -B $(BOARD) -P $(PARAMSFILE).txt -R $(DRAMREGS) -d $(DEBUG_MODE_FLAG) $(PARAMSFILE)_sec.raw $@
 
-$(SETPARAMS):
-	$(MAKE) $(SETPARAMS) BOARD="$(BOARD)"  HOSTOS=$(HOSTOS) HOSTARCH=$(HOSTARCH) HOSTCFLAGS="$(HOSTCFLAGS)" HOST_LDFLAGS="$(HOST_LDFLAGS)"  -C ./platform
+$(obj)$(SETPARAMS):
+	$(MAKE) $(obj)$(SETPARAMS) BOARD="$(BOARD)"  HOSTOS=$(HOSTOS) HOSTARCH=$(HOSTARCH) HOSTCFLAGS="$(HOSTCFLAGS)" HOST_LDFLAGS="$(HOST_LDFLAGS)"  -C ./platform
 
 subdirs:
 	@for dir in $(COMPONENT_SUBDIRS) ; do \
@@ -190,7 +200,7 @@ subdirs:
 	done
 
 clean:
-	$(RM) *.raw *.elf *.srec *.dis *.bin *.a *.uart.bin *.uart.elf ./src/*.o  $(LDSCRIPT) $(LDSECSCRIPT) $(SETPARAMS)
+	$(RM) $(obj)*.raw $(obj)*.elf $(obj)*.srec $(obj)*.dis $(obj)*.bin $(obj)*.a $(obj)*.uart.bin $(obj)*.uart.elf $(obj)./src/*.o  $(obj)$(LDSCRIPT) $(obj)$(LDSECSCRIPT) $(obj)$(SETPARAMS)
 	@for dir in $(COMPONENT_SUBDIRS) ; do \
 	    $(MAKE) clean -s -C $$dir || exit 1 ; \
 	done

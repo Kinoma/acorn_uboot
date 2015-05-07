@@ -62,7 +62,7 @@
 #;
 #;*******************************************************************************/
 #.SECONDARY:
-
+include $(TOPDIR)/config.mk
 include ../base.mk
 
 TGT = ddr_$(BOARD).a
@@ -75,23 +75,25 @@ CSRC = ddr3_spd.c ddr3_init_tipv2.c
 endif
 
 COBJ = $(subst .c,.o,$(CSRC))
+COBJ := $(addprefix $(obj), $(COBJ))
 CUART_OBJ = $(subst .c,.uart.o,$(CSRC))
+CUART_OBJ := $(addprefix $(obj), $(CUART_OBJ))
 
-all:   $(TGT) $(TGT_UART) subdirs
+all:   $(obj)$(TGT) $(obj)$(TGT_UART) subdirs
 
-%.o: %.c
+$(obj)%.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-%.uart.o: %.c
+$(obj)%.uart.o: %.c
 	$(CC) $(CFLAGS) -DNOT_USE_UART -DMV_NO_INPUT -DMV_NO_PRINT  $(CPPFLAGS) -c -o  $@ $<
 
-$(TGT): $(COBJ)
-	ar rcs $(TGT)  $(COBJ)
-	$(CP) ./$@ ../
+$(obj)$(TGT): $(COBJ)
+	ar rcs $(obj)$(TGT)  $(COBJ)
+	$(CP) $@ $(obj)../
 
-$(TGT_UART): $(CUART_OBJ)
-	ar rcs $(TGT_UART)  $(CUART_OBJ)
-	$(CP) ./$@ ../
+$(obj)$(TGT_UART): $(CUART_OBJ)
+	ar rcs $(obj)$(TGT_UART)  $(CUART_OBJ)
+	$(CP) $@ $(obj)../
 
 ifeq ($(DDR3LIB),n)
 SRC_DDR_SUBDIRS =
@@ -104,7 +106,7 @@ SRC_DDR_SUBDIRS = ddr3libv2
 endif
 
 clean:
-	$(RM) ./*.o  ./*.a
+	$(RM) $(obj)./*.o  $(obj)./*.a
 
 	@for dir in $(SRC_DDR_SUBDIRS) ; do \
 		    $(MAKE) clean BOARD="$(BOARD)" -C $$dir || exit 1 ; \

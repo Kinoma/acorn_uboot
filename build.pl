@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+$BUILD_DIR = "build";
+
 use Cwd qw();
 
 sub HELP_MESSAGE
@@ -27,6 +29,13 @@ sub HELP_MESSAGE
 	print "\tCROSS_COMPILE     Cross compiler to build U-BOOT\n";
 	print "\tCROSS_COMPILE_BH  Cross compiler to build bin hdr\n";
 	print "\n";
+}
+
+$O_DIR = $BUILD_DIR;
+if($BUILD_DIR eq ""){
+	$O_DIR = ".";
+}else{
+	system("mkdir -p $BUILD_DIR/include");
 }
 
 # Main
@@ -119,56 +128,67 @@ if(($opt_b eq "armada_xp_dbgp") or
 	}
 	# if board string contains "customer", use customer define for binary_header
 	if (index($board, "customer") != -1){
-		system("echo \"#define CONFIG_CUSTOMER_BOARD_SUPPORT 1\" >> include/config.h");
+		system("echo \"#define CONFIG_CUSTOMER_BOARD_SUPPORT 1\" >> $O_DIR/include/config.h");
 	}
 }
 else
 {
 	if (defined) {
-			print "\n *** Error: Bad board type $opt_b specified\n\n";
-		}
-		else {
-			print "\n *** Error: Board type unspecified\n\n";
-		}
-		HELP_MESSAGE();
-		exit 1;
+		print "\n *** Error: Bad board type $opt_b specified\n\n";
 	}
+	else {
+		print "\n *** Error: Board type unspecified\n\n";
+	}
+	HELP_MESSAGE();
+	exit 1;
+}
 
 # Configure Make
-system("make mrproper");
+if ($BUILD_DIR eq ""){
+	system("make mrproper");
+}else{
+	system("make O=$BUILD_DIR mrproper");
+}
 print "\n**** [Cleaning Make]\t*****\n\n";
 
 my $path = Cwd::cwd();
-chdir  ("./tools/marvell");
-if( ($boardID eq "msys-ac3") or ($boardID eq "msys-bc2")) {
-	system("make clean BOARD=msys -s");
-} else {
-	system("make clean BOARD=$boardID -s");
+if ($BUILD_DIR eq ""){
+	chdir  ("./tools/marvell");
+	if( ($boardID eq "msys-ac3") or ($boardID eq "msys-bc2")) {
+		system("make clean BOARD=msys -s");
+	}else {
+		system("make clean BOARD=$boardID -s");
+	}
 }
+
 chdir  ("$path");
-system("make ${board}_config");
+if ($BUILD_DIR eq ""){
+	system("make ${board}_config");
+}else{
+	system("make O=$BUILD_DIR ${board}_config");
+}
 
 # Set pre processors
 print "\n**** [Setting Macros]\t*****\n\n";
 if($opt_f eq "spi")      {
-	system("echo \"#define MV_SPI_BOOT\" >> include/config.h");
-	system("echo \"#define MV_INCLUDE_SPI\" >> include/config.h");
+	system("echo \"#define MV_SPI_BOOT\" >> $O_DIR/include/config.h");
+	system("echo \"#define MV_INCLUDE_SPI\" >> $O_DIR/include/config.h");
 	print "Boot from SPI\n";
 	$img_opts   = "";
 	$flash_name = "spi";
 	$img_type   = "flash";
 }
 elsif ($opt_f eq "nor")  {
-	system("echo \"#define MV_NOR_BOOT\" >> include/config.h");
-	system("echo \"#define MV_INCLUDE_NOR\" >> include/config.h");
+	system("echo \"#define MV_NOR_BOOT\" >> $O_DIR/include/config.h");
+	system("echo \"#define MV_INCLUDE_NOR\" >> $O_DIR/include/config.h");
 	print "Boot from NOR\n";
 	$img_opts   = "";
 	$flash_name = "nor";
 	$img_type   = "flash";
 }
 elsif  ($opt_f eq "nand"){
-	system("echo \"#define MV_NAND_BOOT\" >> include/config.h");
-	system("echo \"#define MV_NAND\" >> include/config.h");
+	system("echo \"#define MV_NAND_BOOT\" >> $O_DIR/include/config.h");
+	system("echo \"#define MV_NAND\" >> $O_DIR/include/config.h");
 	print "Boot from NAND\n";
 	$flash_name = "nand";
 	$img_type   = "nand";
@@ -195,16 +215,16 @@ else
 # Big endian place holder
 if(defined $opt_e) {
 	$endian = "be";
-	system("echo \"#define __BE\" >> include/config.h");
-	system("echo \"BIG_ENDIAN = y\" >> include/config.mk");
-	system("echo \"LDFLAGS += -EB  \" >> include/config.mk");
-	system("echo \"LDFLAGS_FINAL += -be8  \" >> include/config.mk");
+	system("echo \"#define __BE\" >> $O_DIR/include/config.h");
+	system("echo \"BIG_ENDIAN = y\" >> $O_DIR/include/config.mk");
+	system("echo \"LDFLAGS += -EB  \" >> $O_DIR/include/config.mk");
+	system("echo \"LDFLAGS_FINAL += -be8  \" >> $O_DIR/include/config.mk");
 	system("echo \"  * Big Endian byte ordering \"");
-	system("echo \"PLATFORM_CPPFLAGS += -march=armv7-a \" >>  arch/arm/cpu/armv7/config.mk");
-	system("echo \"#define CPU_ARMARCH7 \" >> include/config.h");
+	system("echo \"PLATFORM_CPPFLAGS += -march=armv7-a \" >>  $O_DIR/arch/arm/cpu/armv7/config.mk");
+	system("echo \"#define CPU_ARMARCH7 \" >> $O_DIR/include/config.h");
 	system("echo \"  * ARM Architecture 7 - Using be8 compile flag\"");
-	system("echo \"CPPFLAGS += -falign-labels=4\" >> include/config.mk");
-	system("echo \"CFLAGS += -mno-tune-ldrd\" >> include/config.mk");
+	system("echo \"CPPFLAGS += -falign-labels=4\" >> $O_DIR/include/config.mk");
+	system("echo \"CFLAGS += -mno-tune-ldrd\" >> $O_DIR/include/config.mk");
 	print "** BIG ENDIAN ** \n";
 }
 else {
@@ -234,15 +254,15 @@ if(defined $opt_i)
 	foreach $if (@interfaces)
 	{
 		if($if eq "spi"){
-			system("echo \"#define MV_INCLUDE_SPI\" >> include/config.h");
+			system("echo \"#define MV_INCLUDE_SPI\" >> $O_DIR/include/config.h");
 			print "SPI ";
 		}
 		elsif($if eq "nor"){
-			system("echo \"#define MV_INCLUDE_NOR\" >> include/config.h");
+			system("echo \"#define MV_INCLUDE_NOR\" >> $O_DIR/include/config.h");
 			print "NOR ";
 		}
 		elsif($if eq "nand"){
-			system("echo \"#define MV_NAND\" >> include/config.h");
+			system("echo \"#define MV_NAND\" >> $O_DIR/include/config.h");
 			print "NAND ";
 		}
 		else {
@@ -254,18 +274,18 @@ if(defined $opt_i)
 
 if(defined $opt_d)
 {
-	system("echo \"DDR3LIB = $opt_d\" >> include/config.mk");
+	system("echo \"DDR3LIB = $opt_d\" >> $O_DIR/include/config.mk");
 	print "\n *** DDR3LIB = v$opt_d *********************************\n\n";
 }
 
 if(defined $opt_m)
 {
-	system("echo \"DDRTYPE = ddr$opt_m\" >> include/config.mk");
+	system("echo \"DDRTYPE = ddr$opt_m\" >> $O_DIR/include/config.mk");
 	print "** DDRTYPE = DDR$opt_m **\n";
 }
 else {
 	# Set default to DDR3
-	system("echo \"DDRTYPE = ddr3\" >> include/config.mk");
+	system("echo \"DDRTYPE = ddr3\" >> $O_DIR/include/config.mk");
 	print "** DDRTYPE = DDR3 ** \n";
 }
 
@@ -273,13 +293,17 @@ if($opt_z eq 1)
 {
 	if ($boardID eq "alp" or $boardID eq "a375"){
 		print "\n\nBuild U-Boot $boardID for Zx revision\n\n";
-		system("echo \"#define CONFIG_ALP_A375_ZX_REV 1\" >> include/config.h");
+		system("echo \"#define CONFIG_ALP_A375_ZX_REV 1\" >> $O_DIR/include/config.h");
 	}
 }
 # Build !
 print "\n**** [Building U-BOOT]\t*****\n\n";
-$fail = system("make -j6 -s");
 
+if ($BUILD_DIR eq ""){
+	$fail = system("make -j6 -s");
+}else{
+	$fail = system("make O=$BUILD_DIR -j6 -s");
+}
 if($fail){
 	print "\n *** Error: Build failed\n\n";
 	exit 1;
@@ -301,15 +325,15 @@ else {
 }
 
 #compile the sx-at91.c
-system("rm sx-at91");
-system("gcc tools/marvell/xmodem/sx-at91.c -o sx-at91");
+system("rm $O_DIR/sx-at91");
+system("gcc tools/marvell/xmodem/sx-at91.c -o $O_DIR/sx-at91");
 
 #Create Image and Uart Image
 print "\n**** [Creating Image]\t*****\n\n";
 
-$failUart = system("./tools/marvell/doimage -T uart -D 0 -E 0 -G ./tools/marvell/bin_hdr/bin_hdr.uart.bin u-boot.bin u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin");
-$fail = system("./tools/marvell/doimage -T $img_type -D 0x0 -E 0x0 $img_opts -G ./tools/marvell/bin_hdr/bin_hdr.bin u-boot.bin u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin");
-$failUartSpi = system("./tools/marvell/doimage -T uart -D 0 -E 0 -s u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin -G ./tools/marvell/bin_hdr/bin_hdr.uart.bin u-boot.bin u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin");
+$failUart = system("$O_DIR/tools/marvell/doimage -T uart -D 0 -E 0 -G $O_DIR/tools/marvell/bin_hdr/bin_hdr.uart.bin $O_DIR/u-boot.bin $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin");
+$fail = system("$O_DIR/tools/marvell/doimage -T $img_type -D 0x0 -E 0x0 $img_opts -G $O_DIR/tools/marvell/bin_hdr/bin_hdr.bin $O_DIR/u-boot.bin $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin");
+$failUartSpi = system("$O_DIR/tools/marvell/doimage -T uart -D 0 -E 0 -s $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin -G $O_DIR/tools/marvell/bin_hdr/bin_hdr.uart.bin $O_DIR/u-boot.bin $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin");
 
 if($fail){
 	print "\n *** Error: Doimage failed\n\n";
@@ -330,20 +354,20 @@ if(defined $opt_o)
 
 	system("mkdir -p $opt_o/$endian/$opt_f");
 	system("mkdir -p $opt_o/bin_hdr");
-	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin $opt_o/u-boot.bin");
-	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin $opt_o/$endian/$opt_f/ ");
-	system("cp u-boot $opt_o/$endian/$opt_f/u-boot-$boardID-$opt_v-$flash_name$targetBoard");
-	system("cp u-boot.srec $opt_o/$endian/$opt_f/u-boot-$boardID-$opt_v-$flash_name$targetBoard.srec");
-	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin $opt_o/$endian/$opt_f/");
-	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin $opt_o/$endian/$opt_f/");
-	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin $opt_o/u-boot-uart.bin");
-	system("cp u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin $opt_o/u-boot-uart-plus.bin");
-	system("cp sx-at91 $opt_o/");
+	system("cp $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin $opt_o/u-boot.bin");
+	system("cp $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard.bin $opt_o/$endian/$opt_f/ ");
+	system("cp $O_DIR/u-boot $opt_o/$endian/$opt_f/u-boot-$boardID-$opt_v-$flash_name$targetBoard");
+	system("cp $O_DIR/u-boot.srec $opt_o/$endian/$opt_f/u-boot-$boardID-$opt_v-$flash_name$targetBoard.srec");
+	system("cp $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin $opt_o/$endian/$opt_f/");
+	system("cp $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin $opt_o/$endian/$opt_f/");
+	system("cp $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart.bin $opt_o/u-boot-uart.bin");
+	system("cp $O_DIR/u-boot-$boardID-$opt_v-$flash_name$targetBoard-uart-plus.bin $opt_o/u-boot-uart-plus.bin");
+	system("cp $O_DIR/sx-at91 $opt_o/");
 
-	system("cp tools/marvell/bin_hdr/bin_hdr.bin $opt_o/bin_hdr/");
-	system("cp tools/marvell/bin_hdr/bin_hdr.elf $opt_o/bin_hdr/");
-	system("cp tools/marvell/bin_hdr/bin_hdr.dis $opt_o/bin_hdr/");
-	system("cp tools/marvell/bin_hdr/bin_hdr.srec $opt_o/bin_hdr/");
+	system("cp $O_DIR/tools/marvell/bin_hdr/bin_hdr.bin $opt_o/bin_hdr/");
+	system("cp $O_DIR/tools/marvell/bin_hdr/bin_hdr.elf $opt_o/bin_hdr/");
+	system("cp $O_DIR/tools/marvell/bin_hdr/bin_hdr.dis $opt_o/bin_hdr/");
+	system("cp $O_DIR/tools/marvell/bin_hdr/bin_hdr.srec $opt_o/bin_hdr/");
 }
 
 exit 0;

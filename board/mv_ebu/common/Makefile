@@ -239,13 +239,48 @@ COBJS = $(COMMON_OBJS)		\
 	$(USP_OBJS) 		\
 	$(ETH_OBJS)
 
-LIB  = lib$(VENDOR).o
+LIB  = $(obj)lib$(VENDOR).o
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(COBJS))
-SOBJS	:= $(addprefix $(obj),$(SOBJS))
 
-$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
+OBJS    := $(foreach f,$(COBJS), $(subst $(AXP_CMN_DIR)/, $(obj), $(f)))
+SOBJS	:= $(foreach f, $(SOBJS), $(subst $(AXP_CMN_DIR)/, $(obj), $(f)))
+
+ifneq ($(obj),)
+$(shell mkdir -p $(obj)common)
+$(shell mkdir -p $(obj)uboot_oss)
+$(shell mkdir -p $(obj)mv_hal/spi)
+$(shell mkdir -p $(obj)mv_hal/nfc)
+$(shell mkdir -p $(obj)mv_hal/xor)
+$(shell mkdir -p $(obj)mv_hal/ddr2_3)
+$(shell mkdir -p $(obj)mv_hal/eth-phy)
+$(shell mkdir -p $(obj)mv_hal/gpp)
+$(shell mkdir -p $(obj)mv_hal/twsi)
+$(shell mkdir -p $(obj)mv_hal/uart)
+$(shell mkdir -p $(obj)mv_hal/pci-if)
+$(shell mkdir -p $(obj)mv_hal/pci-if/pci_util)
+$(shell mkdir -p $(obj)mv_hal/usb)
+$(shell mkdir -p $(obj)mv_hal/pex)
+$(shell mkdir -p $(obj)mv_hal/sdmmc)
+$(shell mkdir -p $(obj)mv_hal/cntmr)
+$(shell mkdir -p $(obj)mv_hal/sata)
+$(shell mkdir -p $(obj)mv_hal/sata/CoreDriver)
+$(shell mkdir -p $(obj)mv_hal/rtc/integ_rtc)
+$(shell mkdir -p $(obj)mv_hal_if)
+$(shell mkdir -p $(obj)mv_hal/sata/sata3)
+$(shell mkdir -p $(obj)USP)
+$(shell mkdir -p $(obj)USP/ethSwitch)
+$(shell mkdir -p $(obj)mv_hal/neta/gbe)
+ifeq ($(BOARD),a38x)
+$(shell mkdir -p $(obj)../a38x/armada_38x_family/ctrlEnv)
+$(shell mkdir -p $(obj)../a38x/armada_38x_family/ctrlEnv/sys)
+$(shell mkdir -p $(obj)../a38x/armada_38x_family/cpu)
+$(shell mkdir -p $(obj)../a38x/armada_38x_family/device)
+$(shell mkdir -p $(obj)../a38x/armada_38x_family/boardEnv)
+endif
+endif
+
+$(LIB): $(obj).depend $(OBJS) $(SOBJS)
 	$(call cmd_link_o_target, $(OBJS) $(SOBJS))
 
 #########################################################################

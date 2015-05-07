@@ -61,7 +61,7 @@
 #;SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #;
 #;*******************************************************************************/
-
+include $(TOPDIR)/config.mk
 HOSTCC = gcc
 
 RM = rm -f
@@ -73,26 +73,26 @@ LIB_PATH = $(LIB_ROOT)/library
 LIB_INCLUDE = $(LIB_ROOT)/include
 
 CFLAGS  = -g -O1 -I./../inc -I$(LIB_INCLUDE) -DMV_CPU_LE
-LDFLAGS = -L$(LIB_PATH) -lpolarssl
+LDFLAGS = -L$(obj)$(LIB_PATH) -lpolarssl
 
-all: doimage hdrparser
+all: $(obj)doimage $(obj)hdrparser
 
-doimage: doimage.o  $(LIB_PATH)/libpolarssl.a
+$(obj)doimage: $(obj)doimage.o  $(obj)$(LIB_PATH)/libpolarssl.a
 	$(HOSTCC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-	$(CP) doimage ../
+	$(CP) $(obj)doimage $(obj)../
 
-hdrparser: hdrparser.o $(LIB_PATH)/libpolarssl.a
+$(obj)hdrparser: $(obj)hdrparser.o $(obj)$(LIB_PATH)/libpolarssl.a
 	$(HOSTCC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
-test: clean doimage
+test: clean $(obj)doimage
 
-$(LIB_PATH)/libpolarssl.a:
+$(obj)$(LIB_PATH)/libpolarssl.a:
 	$(MAKE) CC=$(HOSTCC) all -s -C $(LIB_ROOT)
 
-%.o: %.c
-	$(HOSTCC) $(CFLAGS) -c $<
+$(obj)%.o: %.c
+	$(HOSTCC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	$(RM) doimage ../doimage hdrparser *.o  doimage.o
+	$(RM) $(obj)doimage $(obj)../doimage $(obj)hdrparser $(obj)*.o  $(obj)doimage.o
 	$(MAKE) CC=$(HOSTCC) clean -s -C $(LIB_ROOT)
 
